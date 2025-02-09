@@ -167,7 +167,7 @@ void set_number_on_leds(int num)
     }
 }
 
-bool cor = true;
+bool cor = false;
 ssd1306_t ssd; // Inicializa a estrutura do display
 static void gpio_irq_rhandler(uint gpio, uint32_t events);
 
@@ -242,7 +242,7 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
 
   while (true)
   {
-    cor = !cor;
+    //cor = !cor;
     // Atualiza o conteúdo do display com animações
     //ssd1306_fill(&ssd, !cor); // Limpa o display
     ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
@@ -263,7 +263,7 @@ if (stdio_usb_connected())
             // o o seu valor será invertido. Logo, se o led estiver aceso ele será apagado
             // e se estiver apagado ele será aceso.
                            // case 'r':
-                           ssd1306_fill(&ssd, !cor); // Limpa o display
+                           ssd1306_fill(&ssd, cor); // Limpa o display
                             ssd1306_draw_char(&ssd, c, 8, 10);
                          //   ssd1306_draw_string(&ssd, "r", 8, 10); // Desenha uma string
            // gpio_put(led_pin_r, !gpio_get(led_pin_r));
@@ -289,7 +289,7 @@ if (stdio_usb_connected())
             //printf("Comando inválido: '%c'\n", c);
         }else if (c >= '0' && c <= '9'){
           numero = c - '0';
-          ssd1306_fill(&ssd, !cor); // Limpa o display
+          ssd1306_fill(&ssd, cor); // Limpa o display
           ssd1306_draw_char(&ssd, c, 8, 10);
           set_number_on_leds(numero);
           
@@ -334,13 +334,13 @@ static void gpio_irq_rhandler(uint gpio, uint32_t events)
       bool estado_atual = gpio_get(led_pin_g); // Obtém o estado atual
       gpio_put(led_pin_g, !estado_atual);   
             //printf("Alternando LED Verde);
-            ssd1306_fill(&ssd, !cor); // Limpa o display
+            ssd1306_fill(&ssd, cor); // Limpa o display
             if((estado_atual)==true){
-            ssd1306_draw_string(&ssd, "Desligando VERDE", 20, 30);
+            ssd1306_draw_string(&ssd, "VERDE OFF", 20, 30);
             ssd1306_send_data(&ssd); // Atualiza o display
                 printf("Desligando O LED VERDE");}
             else {       
-               ssd1306_draw_string(&ssd, "Ligando VERDE", 20, 30);
+               ssd1306_draw_string(&ssd, "VERDE ON", 20, 30);
               ssd1306_send_data(&ssd); // Atualiza o display
               printf("Ligando O LED VERDE");}
             
@@ -351,19 +351,19 @@ static void gpio_irq_rhandler(uint gpio, uint32_t events)
       
         bool estado_atual = gpio_get(led_pin_b); // Obtém o estado atual
         gpio_put(led_pin_b, !estado_atual);      // Alterna o estado
-        ssd1306_fill(&ssd, !cor); // Limpa o display
+        ssd1306_fill(&ssd, cor); // Limpa o display
         if((estado_atual)==true){
-        ssd1306_draw_string(&ssd, "Desligando AZUL", 20, 30);
+        ssd1306_draw_string(&ssd, "AZUL OFF", 20, 30);
         ssd1306_send_data(&ssd); // Atualiza o display
             printf("Ligando O LED AZUL");}
         else {       
-           ssd1306_draw_string(&ssd, "Ligando AZUL", 20, 30);
+           ssd1306_draw_string(&ssd, "AZUL ON", 20, 30);
           ssd1306_send_data(&ssd); // Atualiza o display
           printf("Desligando O LED AZUL");}
 
 
         }else{
-          ssd1306_fill(&ssd, !cor); // Limpa o display
+          ssd1306_fill(&ssd, cor); // Limpa o display
           printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
           printf("HABILITANDO O MODO GRAVAÇÃO");
           ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
@@ -374,13 +374,13 @@ static void gpio_irq_rhandler(uint gpio, uint32_t events)
         }
     }
   
-    static void gpio_irq_handler(uint gpio, uint32_t events){
-      printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
-       printf("HABILITANDO O MODO GRAVAÇÃO");
-       ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
-        ssd1306_send_data(&ssd); // Atualiza o display
+    //static void gpio_irq_handler(uint gpio, uint32_t events){
+    //  printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
+     //  printf("HABILITANDO O MODO GRAVAÇÃO");
+     //  ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
+      //  ssd1306_send_data(&ssd); // Atualiza o display
 
-       sleep_ms(100);
-     reset_usb_boot(0,0); //habilita o modo de gravação do microcontrolador
-   }
+      // sleep_ms(100);
+    // reset_usb_boot(0,0); //habilita o modo de gravação do microcontrolador
+   //}
    
