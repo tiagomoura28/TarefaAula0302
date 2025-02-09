@@ -13,7 +13,7 @@
 
 
 #include <stdlib.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/stdio.h"
 #include "hardware/i2c.h"
