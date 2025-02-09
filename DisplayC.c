@@ -1,5 +1,5 @@
 /*
- * Por: Tiago Moura
+ * Por: Tiago Moura adaptação do código https://github.com/wiltonlacerda/EmbarcaTechU4C6/tree/main/I2C_DisplayEmC
  *    Comunicação serial com I2C
  *  
  * Uso da interface I2C para comunicação com o Display OLED e Matriz de Leds
