@@ -1,10 +1,9 @@
 /*
- * Por: Wilton Lacerda Silva
+ * Por: Tiago Moura
  *    Comunicação serial com I2C
  *  
- * Uso da interface I2C para comunicação com o Display OLED
+ * Uso da interface I2C para comunicação com o Display OLED e Matriz de Leds
  * 
- * Estudo da biblioteca ssd1306 com PicoW na Placa BitDogLab.
  *  
  * Este programa escreve uma mensagem no display OLED.
  * 
@@ -19,6 +18,33 @@
 #include "hardware/i2c.h"
 #include "inc/ssd1306.h"
 #include "inc/font.h"
+
+//#include "hardware/pio.h"
+#include "hardware/clocks.h"
+//#include "ws2812.pio.h"
+
+#include "hardware/uart.h"
+
+#include "pico/bootrom.h"
+
+
+const uint button_0 = 5;
+
+//rotina da interrupção
+static void gpio_irq_handler(uint gpio, uint32_t events){
+    printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
+    printf("HABILITANDO O MODO GRAVAÇÃO");
+	reset_usb_boot(0,0); //habilita o modo de gravação do microcontrolador
+}
+
+
+
+
+//dentro da main
+
+    
+
+
 #define I2C_PORT i2c1
 #define I2C_SDA 14
 #define I2C_SCL 15
@@ -29,7 +55,15 @@
 #define led_pin_r 13
 //
 int main()
-{
+{//parte do codigo para bootsel com botao
+//inicializar o botão de interrupção - GPIO5
+gpio_init(button_0);
+gpio_set_dir(button_0, GPIO_IN);
+gpio_pull_up(button_0);
+
+//interrupção da gpio habilitada
+gpio_set_irq_enabled_with_callback(button_0, GPIO_IRQ_EDGE_FALL, 1, & gpio_irq_handler);
+
 //parte da uart led
 stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
 
