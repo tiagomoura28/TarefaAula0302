@@ -17,17 +17,12 @@
 #include "pico/stdio.h"
 #include "hardware/pio.h"
 #include "DisplayC.pio.h"
-
 #include "hardware/i2c.h"
 #include "inc/ssd1306.h"
 #include "inc/font.h"
-
-
 #include "hardware/clocks.h"
 #include "DisplayC.pio.h"
-
 #include "hardware/uart.h"
-
 #include "pico/bootrom.h"
 
 static void gpio_irq_handler(uint gpio, uint32_t events);
