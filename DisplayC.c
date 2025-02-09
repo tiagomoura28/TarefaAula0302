@@ -25,21 +25,9 @@
 #include "hardware/uart.h"
 #include "pico/bootrom.h"
 
-static void gpio_irq_handler(uint gpio, uint32_t events);
-//const uint button_0 = 6;
+//prototipo rotina da interrupção
 
-int numero=10;
-//rotina da interrupção
-
-
-
-
-//dentro da main
-
-    
 //configuração necessária para matriz de leds
-
-
 #define IS_RGBW false
 #define NUM_PIXELS 25
 #define WS2812_PIN 7
@@ -47,27 +35,25 @@ int numero=10;
 #define BUTTON_0_PIN 22
 #define BUTTON_B_PIN 6  // Botão B no GPIO 6
 
+int numero=10;//variavel global usada na matriz de LED
 
 // Variável global para armazenar a cor (Entre 0 e 255 para intensidade)
 uint8_t led_r = 0; // Intensidade do vermelho
 uint8_t led_g = 0; // Intensidade do verde
 uint8_t led_b = 20; // Intensidade do azul
-
+//vARIAVÉIS NECESSÁRIAS PARA i2c
 #define I2C_PORT i2c1
 #define I2C_SDA 14
 #define I2C_SCL 15
 #define endereco 0x3C
-//parte da uart led
+//PINOS  DOS LEDS RGB
 #define led_pin_g 11
 #define led_pin_b 12
 #define led_pin_r 13
-//
+//necessário para o debounce dentro da interrupção
 static volatile uint a = 1;
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
 
-// Prototipação da função de interrupção
-
-//void gpio_irq_handler(uint gpio, uint32_t events);
 
 // Representação de números de 0 a 9 para a matriz 5x5
 bool numeros[10][NUM_PIXELS] = {
@@ -133,8 +119,7 @@ bool numeros[10][NUM_PIXELS] = {
    1, 1, 1, 1, 1}  // 9
 };
 
-// Variável global para armazenar o número atual exibido
-//int numero_atual = NUMERO_INICIAL;
+
 
 static inline void put_pixel(uint32_t pixel_grb)
 {
@@ -146,7 +131,7 @@ static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b)
     return ((uint32_t)(r) << 8) | ((uint32_t)(g) << 16) | (uint32_t)(b);
 }
 
-
+//função para colocar numero na LED 5x5
 void set_number_on_leds(int num)
 {
     for (int i = 0; i < NUM_PIXELS; i++)
@@ -162,16 +147,16 @@ void set_number_on_leds(int num)
     }
 }
 
-bool cor = false;
+bool cor = false;//necessário para colocar cor preta na tela do display
 ssd1306_t ssd; // Inicializa a estrutura do display
 static void gpio_irq_rhandler(uint gpio, uint32_t events);
 
-//bool cor = true;
+
 int main()
 {
   
   //parte do codigo para bootsel com botao
-//inicializar o botão de interrupção - GPIO5
+//inicializar o botão de interrupção - pino 22
 gpio_init(BUTTON_0_PIN);
 gpio_set_dir(BUTTON_0_PIN, GPIO_IN);
 gpio_pull_up(BUTTON_0_PIN);
@@ -186,13 +171,13 @@ gpio_pull_up(BUTTON_A_PIN);  // Habilita o resistor de pull-up no botão A
     gpio_set_dir(BUTTON_B_PIN, GPIO_IN);  // Define o botão B como entrada
     gpio_pull_up(BUTTON_B_PIN);  // Habilita o resistor de pull-up no botão B
 
-    //interrupção da gpio habilitada
-gpio_set_irq_enabled_with_callback(BUTTON_0_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
-    // Função de interrupção com debouncing
+    //interrupção da joystick habilitada
+    gpio_set_irq_enabled_with_callback(BUTTON_0_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
+    //interrupção da botoes habilitada
     gpio_set_irq_enabled_with_callback(BUTTON_A_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
     gpio_set_irq_enabled_with_callback(BUTTON_B_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
 
-//parte da uart led
+
 stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
 
     // Configura os pinos dos LEDs como saída
@@ -208,8 +193,7 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
     gpio_set_dir(led_pin_b, GPIO_OUT);
     gpio_put(led_pin_b, 0); // Inicialmente desligado
 
-    printf("RP2040 inicializado. Envie 'r', 'g' ou 'b' para alternar os LEDs.\n");
-  //
+    
   // I2C Initialisation. Using it at 400Khz.
   i2c_init(I2C_PORT, 400 * 1000);
 
@@ -218,8 +202,7 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
   gpio_pull_up(I2C_SDA); // Pull up the data line
   gpio_pull_up(I2C_SCL); // Pull up the clock line
   
-  //void gpio_irq_handler(uint gpio, uint32_t events);
-
+ 
   ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT); // Inicializa o display
   ssd1306_config(&ssd); // Configura o display
   ssd1306_send_data(&ssd); // Envia os dados para o display
@@ -228,8 +211,8 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
   ssd1306_fill(&ssd, false);
   ssd1306_send_data(&ssd);
 
-  //bool cor = true;
-  //Parte ws2812
+  
+  //Coonfigurção matriz de LEDs ws2812
   PIO pio = pio0;
   int sm = 0;
   uint offset = pio_add_program(pio, &ws2812_program);
@@ -237,11 +220,9 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
 
   while (true)
   {
-    //cor = !cor;
-    // Atualiza o conteúdo do display com animações
-    //ssd1306_fill(&ssd, !cor); // Limpa o display
-    ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
-//parte da uart led
+    
+    ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo no display
+//referente a comunicação serial com o display
 if (stdio_usb_connected())
 { // Certifica-se de que o USB está conectado
     char c;
@@ -250,64 +231,22 @@ if (stdio_usb_connected())
         printf("Recebido: '%c'\n", c);
         if ((c >= 'A' && c <= 'Z')||(c >= 'a' && c <= 'z')){
 
-           
-        
-        //switch (c)
-        //{
-            //Caso o caractere recebido seja 'r' será lido o estado do led vermelho 
-            // o o seu valor será invertido. Logo, se o led estiver aceso ele será apagado
-            // e se estiver apagado ele será aceso.
-                           // case 'r':
-                           ssd1306_fill(&ssd, cor); // Limpa o display
-                            ssd1306_draw_char(&ssd, c, 8, 10);
-                         //   ssd1306_draw_string(&ssd, "r", 8, 10); // Desenha uma string
-           // gpio_put(led_pin_r, !gpio_get(led_pin_r));
-           // printf("LED vermelho alternado!\n");
-           // break;
-       // case 'g':
-       // ssd1306_draw_char(&ssd, c, 8, 10);
-        //ssd1306_draw_string(&ssd, "g", 8, 10); // Desenha uma string
-      
-        //alternar led verde
-         //   gpio_put(led_pin_g, !gpio_get(led_pin_g));
-         //   printf("LED verde alternado!\n");
-          //  break;
-       // case 'b':
-       //   gpio_put(led_pin_b, !gpio_get(led_pin_b));
-          //  printf("LED azul alternado!\n");
-          //  break;
-
-       // ssd1306_draw_char(&ssd, c, 8, 10);
-       // ssd1306_draw_string(&ssd, "b", 8, 10); // Desenha uma string
-         
-      //  default:
-            //printf("Comando inválido: '%c'\n", c);
+          ssd1306_fill(&ssd, cor); // Limpa o display
+          ssd1306_draw_char(&ssd, c, 8, 10);
+          
         }else if (c >= '0' && c <= '9'){
           numero = c - '0';
           ssd1306_fill(&ssd, cor); // Limpa o display
           ssd1306_draw_char(&ssd, c, 8, 10);
           set_number_on_leds(numero);
-          
-
-
-
-        }else{
+          }else{
           printf("Comando inválido: '%c'\n", c);
           ssd1306_draw_string(&ssd, "Comando invalido", 8, 10); // Desenha uma string
         }
     }
 }
 //sleep_ms(40);
-  
-
-
-
-//
-
-
-    //ssd1306_draw_string(&ssd, "CEPEDI   Tic37", 8, 10); // Desenha uma string
-   // ssd1306_draw_string(&ssd, "EMBARCATECH", 20, 30); // Desenha uma string
-   // ssd1306_draw_string(&ssd, "Tiago Moura", 15, 48); // Desenha uma string      
+ 
     ssd1306_send_data(&ssd); // Atualiza o display
 
     sleep_ms(1000);
@@ -328,16 +267,16 @@ static void gpio_irq_rhandler(uint gpio, uint32_t events)
 
       bool estado_atual = gpio_get(led_pin_g); // Obtém o estado atual
       gpio_put(led_pin_g, !estado_atual);   
-            //printf("Alternando LED Verde);
+            
             ssd1306_fill(&ssd, cor); // Limpa o display
             if((estado_atual)==true){
             ssd1306_draw_string(&ssd, "VERDE OFF", 20, 30);
             ssd1306_send_data(&ssd); // Atualiza o display
-                printf("Desligando O LED VERDE");}
+                printf("Desligando O LED VERDE\n");}
             else {       
                ssd1306_draw_string(&ssd, "VERDE ON", 20, 30);
               ssd1306_send_data(&ssd); // Atualiza o display
-              printf("Ligando O LED VERDE");}
+              printf("Ligando O LED VERDE\n");}
             
         }
         else if (!gpio_get(BUTTON_B_PIN)){            
@@ -350,17 +289,17 @@ static void gpio_irq_rhandler(uint gpio, uint32_t events)
         if((estado_atual)==true){
         ssd1306_draw_string(&ssd, "AZUL OFF", 20, 30);
         ssd1306_send_data(&ssd); // Atualiza o display
-            printf("Ligando O LED AZUL");}
+            printf("Desligando O LED AZUL\n");}
         else {       
            ssd1306_draw_string(&ssd, "AZUL ON", 20, 30);
           ssd1306_send_data(&ssd); // Atualiza o display
-          printf("Desligando O LED AZUL");}
+          printf("Ligando O LED AZUL\n");}
 
 
         }else{
           ssd1306_fill(&ssd, cor); // Limpa o display
+          printf("HABILITANDO O MODO GRAVAÇÃO\n");
           printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
-          printf("HABILITANDO O MODO GRAVAÇÃO");
           ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
           ssd1306_send_data(&ssd); // Atualiza o display
           reset_usb_boot(0,0);
@@ -369,13 +308,5 @@ static void gpio_irq_rhandler(uint gpio, uint32_t events)
         }
     }
   
-    //static void gpio_irq_handler(uint gpio, uint32_t events){
-    //  printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
-     //  printf("HABILITANDO O MODO GRAVAÇÃO");
-     //  ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
-      //  ssd1306_send_data(&ssd); // Atualiza o display
-
-      // sleep_ms(100);
-    // reset_usb_boot(0,0); //habilita o modo de gravação do microcontrolador
-   //}
+    
    
