@@ -30,15 +30,11 @@
 
 #include "pico/bootrom.h"
 
+static void gpio_irq_handler(uint gpio, uint32_t events);
+//const uint button_0 = 6;
 
-const uint button_0 = 5;
-
+int numero=10;
 //rotina da interrupção
-static void gpio_irq_handler(uint gpio, uint32_t events){
-    printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
-    printf("HABILITANDO O MODO GRAVAÇÃO");
-	reset_usb_boot(0,0); //habilita o modo de gravação do microcontrolador
-}
 
 
 
@@ -47,9 +43,15 @@ static void gpio_irq_handler(uint gpio, uint32_t events){
 
     
 //configuração necessária para matriz de leds
+
+
 #define IS_RGBW false
 #define NUM_PIXELS 25
 #define WS2812_PIN 7
+#define BUTTON_A_PIN 5  // Botão A no GPIO 5
+#define BUTTON_0_PIN 22
+#define BUTTON_B_PIN 6  // Botão B no GPIO 6
+
 
 // Variável global para armazenar a cor (Entre 0 e 255 para intensidade)
 uint8_t led_r = 0; // Intensidade do vermelho
@@ -69,7 +71,8 @@ static volatile uint a = 1;
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
 
 // Prototipação da função de interrupção
-static void gpio_irq_handler(uint gpio, uint32_t events);
+
+//void gpio_irq_handler(uint gpio, uint32_t events);
 
 // Representação de números de 0 a 9 para a matriz 5x5
 bool numeros[10][NUM_PIXELS] = {
@@ -164,17 +167,35 @@ void set_number_on_leds(int num)
     }
 }
 
+bool cor = true;
+ssd1306_t ssd; // Inicializa a estrutura do display
+static void gpio_irq_rhandler(uint gpio, uint32_t events);
 
-
+//bool cor = true;
 int main()
-{//parte do codigo para bootsel com botao
+{
+  
+  //parte do codigo para bootsel com botao
 //inicializar o botão de interrupção - GPIO5
-gpio_init(button_0);
-gpio_set_dir(button_0, GPIO_IN);
-gpio_pull_up(button_0);
+gpio_init(BUTTON_0_PIN);
+gpio_set_dir(BUTTON_0_PIN, GPIO_IN);
+gpio_pull_up(BUTTON_0_PIN);
 
-//interrupção da gpio habilitada
-gpio_set_irq_enabled_with_callback(button_0, GPIO_IRQ_EDGE_FALL, 1, & gpio_irq_handler);
+
+
+gpio_init(BUTTON_A_PIN);  // Inicializa o pino do botão A
+gpio_set_dir(BUTTON_A_PIN, GPIO_IN);  // Define o botão A como entrada
+gpio_pull_up(BUTTON_A_PIN);  // Habilita o resistor de pull-up no botão A
+
+    gpio_init(BUTTON_B_PIN);  // Inicializa o pino do botão B
+    gpio_set_dir(BUTTON_B_PIN, GPIO_IN);  // Define o botão B como entrada
+    gpio_pull_up(BUTTON_B_PIN);  // Habilita o resistor de pull-up no botão B
+
+    //interrupção da gpio habilitada
+gpio_set_irq_enabled_with_callback(BUTTON_0_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
+    // Função de interrupção com debouncing
+    gpio_set_irq_enabled_with_callback(BUTTON_A_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
+    gpio_set_irq_enabled_with_callback(BUTTON_B_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_rhandler);
 
 //parte da uart led
 stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
@@ -201,7 +222,9 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
   gpio_set_function(I2C_SCL, GPIO_FUNC_I2C); // Set the GPIO pin function to I2C
   gpio_pull_up(I2C_SDA); // Pull up the data line
   gpio_pull_up(I2C_SCL); // Pull up the clock line
-  ssd1306_t ssd; // Inicializa a estrutura do display
+  
+  //void gpio_irq_handler(uint gpio, uint32_t events);
+
   ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT); // Inicializa o display
   ssd1306_config(&ssd); // Configura o display
   ssd1306_send_data(&ssd); // Envia os dados para o display
@@ -210,7 +233,7 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
   ssd1306_fill(&ssd, false);
   ssd1306_send_data(&ssd);
 
-  bool cor = true;
+  //bool cor = true;
   //Parte ws2812
   PIO pio = pio0;
   int sm = 0;
@@ -221,7 +244,7 @@ stdio_init_all(); // Inicializa comunicação USB CDC para monitor serial
   {
     cor = !cor;
     // Atualiza o conteúdo do display com animações
-    ssd1306_fill(&ssd, !cor); // Limpa o display
+    //ssd1306_fill(&ssd, !cor); // Limpa o display
     ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
 //parte da uart led
 if (stdio_usb_connected())
@@ -240,6 +263,7 @@ if (stdio_usb_connected())
             // o o seu valor será invertido. Logo, se o led estiver aceso ele será apagado
             // e se estiver apagado ele será aceso.
                            // case 'r':
+                           ssd1306_fill(&ssd, !cor); // Limpa o display
                             ssd1306_draw_char(&ssd, c, 8, 10);
                          //   ssd1306_draw_string(&ssd, "r", 8, 10); // Desenha uma string
            // gpio_put(led_pin_r, !gpio_get(led_pin_r));
@@ -264,9 +288,11 @@ if (stdio_usb_connected())
       //  default:
             //printf("Comando inválido: '%c'\n", c);
         }else if (c >= '0' && c <= '9'){
-          int num = c - '0';
+          numero = c - '0';
+          ssd1306_fill(&ssd, !cor); // Limpa o display
           ssd1306_draw_char(&ssd, c, 8, 10);
-          set_number_on_leds(num);
+          set_number_on_leds(numero);
+          
 
 
 
@@ -292,3 +318,69 @@ if (stdio_usb_connected())
     sleep_ms(1000);
   }
 }
+
+// Função de interrupção com debouncing
+static void gpio_irq_rhandler(uint gpio, uint32_t events)
+{
+    // Obtém o tempo atual em microssegundos
+    uint32_t current_time = to_us_since_boot(get_absolute_time());
+   // printf("A = %d\n", a);
+    // Verifica se passou tempo suficiente desde o último evento
+    if (current_time - last_time > 200000) // 200 ms de debouncing
+    {
+        last_time = current_time; // Atualiza o tempo do último evento
+       if (!gpio_get(BUTTON_A_PIN)){  // Botão A pressionado (ativo em nível baixo){
+
+      bool estado_atual = gpio_get(led_pin_g); // Obtém o estado atual
+      gpio_put(led_pin_g, !estado_atual);   
+            //printf("Alternando LED Verde);
+            ssd1306_fill(&ssd, !cor); // Limpa o display
+            if((estado_atual)==true){
+            ssd1306_draw_string(&ssd, "Desligando VERDE", 20, 30);
+            ssd1306_send_data(&ssd); // Atualiza o display
+                printf("Desligando O LED VERDE");}
+            else {       
+               ssd1306_draw_string(&ssd, "Ligando VERDE", 20, 30);
+              ssd1306_send_data(&ssd); // Atualiza o display
+              printf("Ligando O LED VERDE");}
+            
+        }
+        else if (!gpio_get(BUTTON_B_PIN)){            
+
+        // Verificar o estado do botão B para decrementar o número
+      
+        bool estado_atual = gpio_get(led_pin_b); // Obtém o estado atual
+        gpio_put(led_pin_b, !estado_atual);      // Alterna o estado
+        ssd1306_fill(&ssd, !cor); // Limpa o display
+        if((estado_atual)==true){
+        ssd1306_draw_string(&ssd, "Desligando AZUL", 20, 30);
+        ssd1306_send_data(&ssd); // Atualiza o display
+            printf("Ligando O LED AZUL");}
+        else {       
+           ssd1306_draw_string(&ssd, "Ligando AZUL", 20, 30);
+          ssd1306_send_data(&ssd); // Atualiza o display
+          printf("Desligando O LED AZUL");}
+
+
+        }else{
+          ssd1306_fill(&ssd, !cor); // Limpa o display
+          printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
+          printf("HABILITANDO O MODO GRAVAÇÃO");
+          ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
+          ssd1306_send_data(&ssd); // Atualiza o display
+          reset_usb_boot(0,0);
+        }
+            
+        }
+    }
+  
+    static void gpio_irq_handler(uint gpio, uint32_t events){
+      printf("Interrupção ocorreu no pino %d, no evento %d\n", gpio, events);
+       printf("HABILITANDO O MODO GRAVAÇÃO");
+       ssd1306_draw_string(&ssd, "BOOTSEL", 15, 48); // Desenha uma string
+        ssd1306_send_data(&ssd); // Atualiza o display
+
+       sleep_ms(100);
+     reset_usb_boot(0,0); //habilita o modo de gravação do microcontrolador
+   }
+   
