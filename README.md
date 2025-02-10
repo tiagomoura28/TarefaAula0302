@@ -5,10 +5,15 @@ Descrição do Projeto:
 Neste projeto, utilizou-se os seguintes componentes conectados à placa BitDogLab:
 
 • Matriz 5x5 de LEDs (endereçáveis) WS2812, conectada à GPIO 7.
+
 • LED RGB, com os pinos conectados às GPIOs (11, 12 e 13).
+
 • Botão A conectado à GPIO 5.
+
 • Botão B conectado à GPIO 6.
+
 • Display SSD1306 conectado via I2C (GPIO 14 e GPIO15).
+
 Funcionalidades do Projeto
 1. Modificação da Biblioteca font.h
 • Adicionar caracteres minúsculos à biblioteca font.h. Use sua criatividade para criar os novos 
